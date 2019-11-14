@@ -62,7 +62,7 @@ running = true
 
 spawn(function()
 	local success, errorMessage = pcall(function()
-		require(script.main)
+		loadstring(script.main.Source)()
 	end)
 
 	if not success then
