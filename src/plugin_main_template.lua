@@ -24,22 +24,19 @@ if place_port ~= PORT then
 end
 
 local queuedMessages = {}
-local timeSinceLastSend = 0
-local messageSendRate = 0.2
 local closeDelay = 0.5
-local running = false
+local running = true
 
-local heartbeatConnection = RunService.Heartbeat:Connect(function(dt)
-	timeSinceLastSend = timeSinceLastSend + dt
-
-	if timeSinceLastSend >= messageSendRate and running then
-		local encoded = HttpService:JSONEncode(queuedMessages)
-		queuedMessages = {}
-		timeSinceLastSend = 0
-
-		HttpService:PostAsync(SERVER_URL .. "/messages", encoded)
+local function flushMessages()
+	if #queuedMessages == 0 then
+		return
 	end
-end)
+
+	local encoded = HttpService:JSONEncode(queuedMessages)
+	queuedMessages = {}
+
+	HttpService:PostAsync(SERVER_URL .. "/messages", encoded)
+end
 
 local logTypeToLevel = {
 	[Enum.MessageType.MessageOutput] = "Print",
@@ -58,11 +55,11 @@ end)
 
 HttpService:PostAsync(SERVER_URL .. "/start", "")
 
-running = true
+flushMessages()
 
 spawn(function()
 	local success, errorMessage = pcall(function()
-		require(script.main)
+		loadstring(script.main.Source)()
 	end)
 
 	if not success then
@@ -76,9 +73,12 @@ end)
 
 local timeout = tick() + {{TIMEOUT}}
 
-while running and tick() < timeout do
+while (running or (_G.RUN_IN_ROBLOX_COMPLETE == nil or _G.RUN_IN_ROBLOX_COMPLETE == false)) and tick() < timeout do
+	flushMessages()
 	wait(1)
 end
+
+flushMessages()
 
 local success, errorMessage = pcall(function()
 	HttpService:PostAsync(SERVER_URL .. "/stop", "")
@@ -89,5 +89,4 @@ if not success then
 	warn(errorMessage)
 end
 
-heartbeatConnection:Disconnect()
 logConnection:Disconnect()

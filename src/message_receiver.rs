@@ -23,6 +23,8 @@ use hyper::{
     service::service_fn,
 };
 
+use log::debug;
+
 type HyperResponse = Box<Future<Item = Response<Body>, Error = hyper::Error> + Send>;
 
 #[derive(Debug, Clone)]
@@ -101,14 +103,17 @@ impl MessageReceiver {
                             *response.body_mut() = Body::from("Hey there!");
                         },
                         (&Method::POST, "/start") => {
+                            debug!("Received start");
                             message_tx.send(Message::Start).unwrap();
                             *response.body_mut() = Body::from("Started");
                         },
                         (&Method::POST, "/stop") => {
+                            debug!("Received stop");
                             message_tx.send(Message::Stop).unwrap();
                             *response.body_mut() = Body::from("Finished");
                         },
                         (&Method::POST, "/messages") => {
+                            debug!("Received messages");
                             let message_tx = message_tx.clone();
 
                             let future = request
