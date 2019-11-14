@@ -92,6 +92,7 @@ impl PlaceRunner {
                 Message::Start => {},
                 Message::Stop => {
                     message_processor.send(None).expect("Could not send stop message");
+                    drop(message_processor);
                     break;
                 },
                 Message::Messages(roblox_messages) => {

@@ -2,6 +2,7 @@ use std::{
     collections::HashMap,
     path::Path,
     sync::mpsc::{self, Receiver},
+    thread
 };
 
 use rbx_dom_weak::{RbxTree, RbxInstanceProperties};
@@ -44,8 +45,11 @@ pub fn run_script(options: PlaceRunnerOptions) -> Receiver<Option<RobloxMessage>
     let place = PlaceRunner::new(tree, options);
     let (message_tx, message_rx) = mpsc::channel();
 
-    info!("Running place...");
-    place.run_with_sender(message_tx);
+    thread::spawn(move || {
+        info!("Running place...");
+        place.run_with_sender(message_tx);
+        info!("Finished running place");
+    });
 
     message_rx
 }
